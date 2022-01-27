@@ -13,6 +13,8 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 
 ID_OF_THE_TEACHER = 526809653  # id of the teacher
+IDS_OF_DEVELOPERS = [936467751, 526809653]
+
 
 # message configs
 CALENDAR_BTN = "Календарь📆"
@@ -20,6 +22,9 @@ NOTICES_BTN = "Список напоминаний📃"
 ADD_EVENT_BTN = "Добавить событие✏️"
 ADD_NOTICE_BTN = "Установить напоминание⏰"
 HELP_BTN = "Справочник⚙"
+HOMEWORK_BTN = "Домашнее задание📖"
+UPDATE_BTN = "Обновить бота⚠️"
+ADD_UPDATE_BTN = "Сообщить об обновлении"
 
 GREETING_MESSAGE = """Привет, человек👋
 
@@ -84,6 +89,8 @@ def start(message):
     """
     adds new user to the database and greets them
     """
+    global message_start
+    message_start = message
     log.bot_message(message)
     # adding user to the database
     database.add_user(
@@ -93,13 +100,43 @@ def start(message):
     log.info(log.BOT, f"All user id: {all_user_id}")
     startmenu = types.ReplyKeyboardMarkup(True, False)
     if not database.is_teacher(message.chat.id):
-        startmenu.row(CALENDAR_BTN)
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
     else:
-        startmenu.row(CALENDAR_BTN, NOTICES_BTN)
-        startmenu.row(ADD_EVENT_BTN, ADD_NOTICE_BTN)
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
+        startmenu.row(ADD_EVENT_BTN)
         startmenu.row(HELP_BTN)
+        
+    for i in IDS_OF_DEVELOPERS:
+        if i == message.chat.id:
+            startmenu.row(ADD_UPDATE)
     bot.send_message(
         message.chat.id, GREETING_MESSAGE, reply_markup=startmenu,
+    )
+
+def start2(message):
+    """
+    adds new user to the database and greets them
+    """
+    log.bot_message(message)
+    # adding user to the database
+    database.add_user(
+        message.chat.id, message.chat.id == ID_OF_THE_TEACHER
+    )  # all_user_id.add(message.chat.id)
+    all_user_id = database.get_user_list()
+    log.info(log.BOT, f"All user id: {all_user_id}")
+    startmenu = types.ReplyKeyboardMarkup(True, False)
+    if not database.is_teacher(message.chat.id):
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
+    else:
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
+        startmenu.row(ADD_EVENT_BTN)
+        startmenu.row(HELP_BTN)
+        
+    for i in IDS_OF_DEVELOPERS:
+        if i == message.chat.id:
+            startmenu.row(ADD_UPDATE)
+    bot.send_message(
+        message.chat.id, 'Бот обновлен', reply_markup=startmenu,
     )
 
 
@@ -198,7 +235,20 @@ def cmd_help(message):
     Help for the teacher
     """
     bot.send_message(message.chat.id, HELP_MESSAGE)
+    
+    
+def cmd_add_update(message):
+    users_who_has_to_update = database.get_user_list()
+    keyboard = types.ReplyKeyboardMarkup(True, False)
+    for id in users_who_has_to_update:
+        keyboard.row(UPDATE_BTN)
+        bot.send_message(id, 
+                         f"⚠️Вышло новое обновление. Скорее обнови своего бота. Нажми на кнопку 👇\"{UPDATE_BTN}\"👇",
+                         reply_markup=keyboard,
+        )
 
+def cmd_update(message):
+    start2(message_start)
 
 def cmd_empty(message):
     """
@@ -210,11 +260,14 @@ def cmd_empty(message):
 
 
 CMD_MAP = {
+    HOMEWORK_BTN: [cmd_list_events, True],
     CALENDAR_BTN: [cmd_list_events, True],
+    UPDATE_BTN: [cmd_update, True],
     ADD_EVENT_BTN: [cmd_add_event, False],
     NOTICES_BTN: [cmd_list_notices, False],
     ADD_NOTICE_BTN: [cmd_add_notice, False],
     HELP_BTN: [cmd_help, False],
+    ADD_UPDATE_BTN: [cmd_add_update, False],
 }
 
 
@@ -253,8 +306,8 @@ def changing_our_calendar2(message):
         nowdate = datetime.datetime.now()
 
         startmenu = types.ReplyKeyboardMarkup(True, False)
-        startmenu.row(CALENDAR_BTN, NOTICES_BTN)
-        startmenu.row(ADD_EVENT_BTN, ADD_NOTICE_BTN)
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
+        startmenu.row(ADD_EVENT_BTN)
         startmenu.row(HELP_BTN)
 
         if daydate >= nowdate:
@@ -276,8 +329,8 @@ def changing_our_calendar2(message):
     except Exception as e:
         log.error(log.BOT, e)
         startmenu = types.ReplyKeyboardMarkup(True, False)
-        startmenu.row(CALENDAR_BTN, NOTICES_BTN)
-        startmenu.row(ADD_EVENT_BTN, ADD_NOTICE_BTN)
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
+        startmenu.row(ADD_EVENT_BTN)
         startmenu.row(HELP_BTN)
 
         bot.send_message(
@@ -333,8 +386,8 @@ def reminder_3(message):
         database.add_notice(information, moment.timestamp())
 
         startmenu = types.ReplyKeyboardMarkup(True, False)
-        startmenu.row(CALENDAR_BTN, NOTICES_BTN)
-        startmenu.row(ADD_EVENT_BTN, ADD_NOTICE_BTN)
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
+        startmenu.row(ADD_EVENT_BTN)
         startmenu.row(HELP_BTN)
 
         bot.send_message(
@@ -346,8 +399,8 @@ def reminder_3(message):
     except Exception as e:
         log.error(log.BOT, e)
         startmenu = types.ReplyKeyboardMarkup(True, False)
-        startmenu.row(CALENDAR_BTN, NOTICES_BTN)
-        startmenu.row(ADD_EVENT_BTN, ADD_NOTICE_BTN)
+        startmenu.row(CALENDAR_BTN, HOMEWORK_BTN)
+        startmenu.row(ADD_EVENT_BTN)
         startmenu.row(HELP_BTN)
 
         bot.send_message(
@@ -357,8 +410,8 @@ def reminder_3(message):
         )
 
 
-th = Thread(target=notice_update_loop)
-th.start()
+# th = Thread(target=notice_update_loop)
+# th.start()
 
 log.info(log.BOT, "Starting the bot")
 bot.infinity_polling()
